@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  app:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: springboot-rest-app
+    working_dir: /app
+    command: ./mvnw spring-boot:run
+    volumes:
+      - .:/app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/user_management
+      SPRING_DATASOURCE_USERNAME: java_springboot
+      SPRING_DATASOURCE_PASSWORD: java_springboot_pwd
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:9.0
+    container_name: mysql_container
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: user_management
+      MYSQL_USER: java_springboot
+      MYSQL_PASSWORD: java_springboot_pwd
+    ports:
+      - "3306:3306"
+    volumes:
+      - ${HOME}/dev/container/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
