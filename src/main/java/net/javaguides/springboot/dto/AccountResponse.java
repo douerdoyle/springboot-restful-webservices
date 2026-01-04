@@ -2,11 +2,11 @@ package net.javaguides.springboot.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
-@Builder
+@NoArgsConstructor
 @AllArgsConstructor
 @Schema(name = "AccountResponse", description = "Representation returned to clients for account resources")
 public class AccountResponse {
@@ -19,4 +19,8 @@ public class AccountResponse {
     private String lastName;
     @Schema(description = "Email linked to the account", example = "jane.doe@example.com")
     private String email;
+
+    public static AccountResponse of(Long id, String firstName, String lastName, String email) {
+        return new AccountResponse(id, firstName, lastName, email);
+    }
 }

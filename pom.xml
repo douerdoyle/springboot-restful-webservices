@@ -9,15 +9,14 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>net.javaguides</groupId>
-	<artifactId>springboot-restful-webservices</artifactId>
+	<artifactId>springboot-restful-microservices</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>springboot-restful-webservices</name>
+	<name>springboot-restful-microservices</name>
 	<description>Demo project for Spring Boot Restful Webservices</description>
 	<properties>
 		<java.version>21</java.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<mysql.version>9.5.0</mysql.version>
-		<h2.version>2.2.224</h2.version>
 		<lombok.version>1.18.34</lombok.version>
 		<springdoc-openapi.version>3.0.0</springdoc-openapi.version>
 	</properties>
@@ -32,6 +31,10 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 			<dependency>
@@ -43,7 +46,11 @@
 				<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 				<version>${springdoc-openapi.version}</version>
 			</dependency>
-
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -57,24 +64,13 @@
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<version>${h2.version}</version>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-test-autoconfigure</artifactId>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

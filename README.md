@@ -1,109 +1,126 @@
 # Spring Boot Account Management REST API
 
-A Spring Boot REST API demonstrating layered architecture, DTO-based contracts, validation, and operational tooling.
-The Spring Boot API from my other project: https://github.com/douerdoyle/springboot-restful-webservices/tree/main 
+This repository is an example of integrating a Spring Boot service with Docker.
 
-## Project Overview
+## Spring Boot service overview
 
-- This is a general Spring Boot project that follows controller, service, and repository layers.
-- This project demonstrates how to run a Spring Boot RESTful API service alongside MySQL. The Spring Boot service performs CRUD operations against the MySQL database.
-- DTOs handle requests and responses so the service won't expose its database table structure.
-- Database access is implemented with Spring Data JPA.
-- The entity, DTOs, and service classes are integrated with Lombok.
-- A global exception handler also exists for handling errors.
+* Controllers forward work to services and repositories
+* CRUD operations rely on Spring Data JPA and MySQL
+* DTO classes keep the HTTP surface separate from the database model
+* Lombok keeps the DTO and entity classes readable
+* A global exception handler formats validation errors
 
-## Tech Stack & Versions
+## Tech stack
 
-| Component | Version / Details |
+| Component | Version or detail |
 | --- | --- |
 | Java | 21 (`pom.xml:<java.version>`) |
 | Spring Boot | 4.0.1 (`spring-boot-starter-parent`) |
-| Spring Data JPA / Spring Web | Pulled from the Spring Boot BOM |
-| Persistence | MySQL Connector/J 9.5.0 (default datasource) |
-| Alt. Database | H2 2.2.224 dependency available for in-memory runs |
-| Build | Maven 3.9+ or the bundled `mvnw` wrapper |
-| Tooling | Lombok 1.18.34, Bean Validation (`spring-boot-starter-validation`), JUnit 5 |
+| Spring Data JPA and Spring MVC | Pulled from the Spring Boot BOM |
+| Database driver | MySQL Connector J 9.5.0 |
+| Tooling | Lombok 1.18.34, Bean Validation, JUnit 5 |
 
-## Local Setup
+## Local setup
 
 **Prerequisites**
 
-- Install JDK 21 and Maven 3.9+ (or rely on `./mvnw`).
-- Make sure Docker is installed in your environment.
+* JDK 21 and Maven 3.9 (or the wrapper)
+* Docker if you want to run the compose stack
 
 ## Run with Docker Compose
 
-There is a file named `docker-compose.yml` in the project root that allows the service and the MySQL database to be run as containers.
-The project directory is mounted into the `app` container so code edits on the host instantly apply to the service running inside Docker, and the MySQL service also mounts the volume from the host.
+`docker-compose.yml` starts both the API and MySQL containers. The project directory is mounted into the container so you can edit code on the host and restart inside Docker without rebuilding.
 
-1. Launch the full stack from the repository root:
+### Configure the Basic Auth users first
+
+1. Copy `.env.example` to `.env`
+2. Configure at least one admin by setting `APP_SECURITY_ADMINS_0_USERNAME` and `_PASSWORD`. Add more admins by increasing the index, such as `APP_SECURITY_ADMINS_1_USERNAME` and `APP_SECURITY_ADMINS_2_USERNAME`
+3. Optionally define any number of viewers with the same pattern, for example `APP_SECURITY_VIEWERS_0_USERNAME`, `APP_SECURITY_VIEWERS_1_USERNAME`, and so on
+4. Continue with the compose commands below
+
+Once `.env` exists:
+
+1. Bring everything up from the repo root
    ```bash
    docker compose up --build -d
    ```
-   The first run downloads the Maven and MySQL images and resolves project dependencies. Omit `--build` for subsequent starts if no code changes were made.
-   The services usually take a few minutes to download the required images and libraries and then start.
-2. Follow the logs with `docker compose logs -f app`.
-3. Delete everything with `docker compose down -v`. It will also delete `${HOME}/dev/container/mysql`, which stores the MySQL data directory.
+   The first run downloads the Maven and MySQL images and resolves dependencies.
+2. Tail the logs with `docker compose logs -f app`
+3. Shut everything down with `docker compose down -v`
+4. Remove the MySQL data directory with `rm -rf ${HOME}/dev/container/mysql`
 
-You may also revise the environment variables in `docker-compose.yml` if you want a different schema/user/password or different service ports.
+Feel free to adjust the environment variables inside `docker-compose.yml` if you want to use different ports or credentials.
 
 ### Actuator exposure notes
 
-Spring Boot Actuator endpoints are intended for internal diagnostics.
-They are usually kept behind an API gateway or a restricted network after deployment.
-Actuator's URL is `http://localhost:8081`.
+Actuator is exposed on `http://localhost:8081`. Only the admin user from `.env` can access the exposed endpoints.
 
-| Endpoint | Purpose / Notes |
+| Endpoint | Purpose |
 | --- | --- |
-| `/actuator/health` | Health check endpoint (exposed). |
-| `/actuator/metrics` | Application metrics (exposed). |
-| `/actuator/env` | Not exposed by default (security reasons). |
-| `/actuator/configprops` | Not exposed by default (security reasons). |
-| `/actuator/shutdown` | Disabled by default. |
+| `/actuator/health` | Basic health probe (admin Basic Auth required) |
+| `/actuator/metrics` | Metrics snapshot (admin Basic Auth required) |
+| `/actuator/info` | Application metadata (admin Basic Auth required) |
+| `/actuator/env` | Disabled |
+| `/actuator/configprops` | Disabled |
+| `/actuator/shutdown` | Disabled |
 
-### API documentation (Swagger / OpenAPI)
+### API documentation (Swagger and OpenAPI)
 
-Swagger UI is available at:
-- `http://localhost:8080/swagger-ui.html`
+Swagger UI is exposed at `http://localhost:8080/swagger-ui.html`.
+Sign in with the admin credentials from `.env`
 
-| Endpoint | Purpose / Notes |
-| --- | --- |
-| `/swagger-ui.html` | Interactive Swagger UI for testing and exploring the REST endpoints. |
-| `/v3/api-docs` | JSON OpenAPI document that can be imported into Postman, API Gateway definitions, etc. |
-| `/v3/api-docs.yaml` | YAML variant of the spec (served automatically by Springdoc). |
+| Endpoint | Purpose                                                                   |
+| --- |---------------------------------------------------------------------------|
+| `/swagger-ui.html` | The Swagger UI (admin Basic Auth required)                                |
+| `/v3/api-docs` | JSON OpenAPI document that can be imported into tools like Postman (admin Basic Auth required) |
+| `/v3/api-docs.yaml` | YAML version of the spec (admin Basic Auth required)                     |
 
-Protect these documentation endpoints the same way you protect Actuator if the service is exposed outside trusted networks.
+If you expose this service outside localhost, keep these docs behind the same protections as Actuator.
 
-## API Surface
+### API versioning
 
-| Method | Endpoint | Description                                                                                                        | curl example |
-| --- | --- |--------------------------------------------------------------------------------------------------------------------| --- |
-| POST | `/api/accounts` | Create an account using the validated `AccountRequest` payload.                                                    | `curl -X POST http://localhost:8080/api/accounts -H 'Content-Type: application/json' -d '{"firstName":"Jane","lastName":"Doe","email":"jane@example.com"}'` |
-| GET | `/api/accounts/{id}` | Fetch a single account by ID. Missing IDs return HTTP 404.                                                         | `curl http://localhost:8080/api/accounts/1` |
-| GET | `/api/accounts` | Return all accounts.                                                                                               | `curl http://localhost:8080/api/accounts` |
-| PUT | `/api/accounts/{id}` | Replace the identified account's fields with a validated request body. Returns HTTP 404 if the account is missing. | `curl -X PUT http://localhost:8080/api/accounts/1 -H 'Content-Type: application/json' -d '{"firstName":"Janet","lastName":"Doe","email":"jdoe@example.com"}'` |
-| DELETE | `/api/accounts/{id}` | Remove the account and respond with HTTP 204 (no body), returning HTTP 404 if the ID does not exist.             | `curl -X DELETE http://localhost:8080/api/accounts/1 -i` |
+Version 1 remains open at `/api/v1`. Version 2 uses Basic Auth through the usernames and passwords defined in `.env`. Any number of admin accounts can be configured (at least one is required) and viewer accounts are optional.
+
+## API surface
+
+**Version 1 (open access)**
+
+| Method | Endpoint | Description | curl example |
+| --- | --- | --- | --- |
+| POST | `/api/v1/accounts` | Create an account from an `AccountRequest` body | `curl -X POST http://localhost:8080/api/v1/accounts -H 'Content-Type: application/json' -d '{"firstName":"Jane","lastName":"Doe","email":"jane@example.com"}'` |
+| GET | `/api/v1/accounts/{id}` | Fetch an account by id | `curl http://localhost:8080/api/v1/accounts/1` |
+| GET | `/api/v1/accounts` | Fetch every account | `curl http://localhost:8080/api/v1/accounts` |
+| PUT | `/api/v1/accounts/{id}` | Replace an account | `curl -X PUT http://localhost:8080/api/v1/accounts/1 -H 'Content-Type: application/json' -d '{"firstName":"Janet","lastName":"Doe","email":"jdoe@example.com"}'` |
+| DELETE | `/api/v1/accounts/{id}` | Remove an account | `curl -X DELETE http://localhost:8080/api/v1/accounts/1 -i` |
+
+**Version 2 (Basic Auth protected)**
+
+Admins can call every API. Viewer accounts can only call the GET API.
+
+| Method | Endpoint | Description | curl example |
+| --- | --- | --- | --- |
+| POST | `/api/v2/accounts` | Create an account (admin) | `curl -u admin:password -X POST http://localhost:8080/api/v2/accounts -H 'Content-Type: application/json' -d '{"firstName":"Jane","lastName":"Doe","email":"jane@example.com"}'` |
+| GET | `/api/v2/accounts/{id}` | Fetch an account (admin or viewer) | `curl -u viewer1:password http://localhost:8080/api/v2/accounts/1` |
+| GET | `/api/v2/accounts` | Fetch every account (admin or viewer) | `curl -u admin:password http://localhost:8080/api/v2/accounts` |
+| PUT | `/api/v2/accounts/{id}` | Replace an account (admin) | `curl -u admin:password -X PUT http://localhost:8080/api/v2/accounts/1 -H 'Content-Type: application/json' -d '{"firstName":"Janet","lastName":"Doe","email":"jdoe@example.com"}'` |
+| DELETE | `/api/v2/accounts/{id}` | Remove an account (admin) | `curl -u admin:password -X DELETE http://localhost:8080/api/v2/accounts/1 -i` |
 
 ## Testing
 
-Execute the Spring Boot test suite:
+Run the test suite with:
 ```bash
 ./mvnw test
 ```
 
-The test suite focuses on unit tests for the service and controller layers.
-Integration tests with a real database are intentionally omitted to keep the project lightweight and fast to run.
-
-### Testing prerequisites
-
-If your environment has multiple JDKs installed, set Maven to Java 21 before running the tests:
+If multiple JDKs are installed, set `JAVA_HOME` to version 21 before running tests:
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 export PATH="$JAVA_HOME/bin:$PATH"
 ./mvnw clean test
 ```
 
-## Note
+Security checks need to be verified manually with curl and the Swagger UI.
 
-This project was inspired by Ramesh Fadatare's Spring Boot tutorials.
-I extended it with testing, Docker support, and operational tooling.
+## Credits
+
+This project began after I followed Ramesh Fadatare's lessons and the in28minutes Spring Boot microservices lessons, then I merged what I learned into a single codebase.

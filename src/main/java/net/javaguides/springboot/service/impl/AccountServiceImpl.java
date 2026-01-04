@@ -69,11 +69,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private AccountResponse mapToResponse(Account account) {
-        return AccountResponse.builder()
-                .id(account.getId())
-                .firstName(account.getFirstName())
-                .lastName(account.getLastName())
-                .email(account.getEmail())
-                .build();
+        return AccountResponse.of(
+                account.getId(),
+                account.getFirstName(),
+                account.getLastName(),
+                account.getEmail());
     }
 }
